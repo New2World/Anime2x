@@ -54,6 +54,10 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
                             {'params': model.mapping.parameters(), 'lr':lr1},
                             {'params': model.decoder.parameters(), 'lr':lr2}])
     lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5)
+    lr_scheduler.step()
+    lr_scheduler.step()
+    lr_scheduler.step()
+    lr_scheduler.step()
     for ep in range(epoch):
         avg_loss = 0.
         for sample in dataloader:
@@ -80,11 +84,11 @@ dataset = SuperResolutionDataset()
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 fsrcnn = model.FSRCNN()
 
-fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_9000.pt"))
+fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_16000.pt"))
 
 if torch.cuda.is_available():
     fsrcnn.cuda()
 # summary = SummaryWriter(log_dir="logdir")
-training_loop(fsrcnn, dataloader, step=9000, epoch=20)
+training_loop(fsrcnn, dataloader, step=16000, epoch=20, lr1=1e-5, lr2=1e-6)
 # summary.close()
 torch.save(model.state_dict(), "checkpoints/fsrcnn_final.pt")
