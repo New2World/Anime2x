@@ -45,7 +45,7 @@ class SuperResolutionDataset(Dataset):
             I = I.cuda()
         return {"low":image, "high":I}
 
-def training_loop(model, dataloader, epoch=10, lr1=1e-3, lr2=1e-4, summary=None):
+def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summary=None):
     criteria = nn.MSELoss()
     if torch.cuda.is_available():
         model.cuda()
@@ -53,8 +53,7 @@ def training_loop(model, dataloader, epoch=10, lr1=1e-3, lr2=1e-4, summary=None)
     optimizer = optim.Adam([{'params': model.encoder.parameters(), 'lr':lr1},
                             {'params': model.mapping.parameters(), 'lr':lr1},
                             {'params': model.decoder.parameters(), 'lr':lr2}])
-    lr_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [5,])
-    step = 0
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5)
     for ep in range(epoch):
         avg_loss = 0.
         for sample in dataloader:
@@ -80,9 +79,12 @@ def training_loop(model, dataloader, epoch=10, lr1=1e-3, lr2=1e-4, summary=None)
 dataset = SuperResolutionDataset()
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 fsrcnn = model.FSRCNN()
+
+fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_9000.pt"))
+
 if torch.cuda.is_available():
     fsrcnn.cuda()
 # summary = SummaryWriter(log_dir="logdir")
-training_loop(fsrcnn, dataloader, epoch=20)
+training_loop(fsrcnn, dataloader, step=9000, epoch=20)
 # summary.close()
 torch.save(model.state_dict(), "checkpoints/fsrcnn_final.pt")
