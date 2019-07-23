@@ -1,22 +1,22 @@
-import cv2
+import skimage.io as si
 import numpy as np
 import torch
 
 import model
 
-c_mean = [0.396, 0.504, 0.570]
-c_std = [0.220, 0.219, 0.215]
+c_mean = [0.513, 0.476, 0.471]
+c_std = [0.367, 0.355, 0.348]
 
 def read_zero_mean_image(image_name):
-    image = cv2.imread(image_name).transpose(2,0,1)/255.
+    image = si.imread(image_name).transpose(2,0,1)/255.
     for i in range(3):
         image[i] = (image[i]-c_mean[i])/c_std[i]
     image = image[np.newaxis,:,:,:]
     return image
 
 fsrcnn = model.FSRCNN()
-fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_200.pt"))
-image = torch.from_numpy(read_zero_mean_image("fantasy.jpg")).type(torch.FloatTensor)
+fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_final.pt"))
+image = torch.from_numpy(read_zero_mean_image("sakura.png")).type(torch.FloatTensor)
 
 if torch.cuda.is_available():
     fsrcnn.cuda()
@@ -31,4 +31,4 @@ outp = outp.transpose(1,2,0)
 outp[outp<0] = 0
 outp[outp>255] = 255
 
-cv2.imwrite("output.png", outp.astype(np.uint8))
+si.imsave("output.png", outp.astype(np.uint8))
