@@ -19,13 +19,13 @@ class SuperResolutionDataset(Dataset):
         self.n_samples = len(list(os.walk("data"))[0][2])
         self.preprocess = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
-            tv.transforms.RandomCrop(482, padding=4, padding_mode='symmetric'),
+            tv.transforms.RandomCrop(320),
             tv.transforms.RandomHorizontalFlip(),
             tv.transforms.RandomVerticalFlip()
         ])
         self.resize = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
-            tv.transforms.Resize(241)
+            tv.transforms.Resize(160)
         ])
     
     def __len__(self):
@@ -79,12 +79,9 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
 dataset = SuperResolutionDataset()
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 fsrcnn = model.FSRCNN()
-
-# fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_16000.pt"))
-
 if torch.cuda.is_available():
     fsrcnn.cuda()
 # summary = SummaryWriter(log_dir="logdir")
-training_loop(fsrcnn, dataloader, epoch=20, lr1=1e-3, lr2=1e-4)
+training_loop(fsrcnn, dataloader, epoch=20)
 # summary.close()
-torch.save(model.state_dict(), "checkpoints/fsrcnn_final.pt")
+torch.save(fsrcnn.state_dict(), "checkpoints/fsrcnn_final.pt")
