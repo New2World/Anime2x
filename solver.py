@@ -9,13 +9,13 @@ c_std = [0.367, 0.355, 0.348]
 
 def read_zero_mean_image(image_name):
     image = si.imread(image_name).transpose(2,0,1)/255.
-    for i in range(3):
-        image[i] = (image[i]-c_mean[i])/c_std[i]
+    # for i in range(3):
+    #     image[i] = (image[i]-c_mean[i])/c_std[i]
     image = image[np.newaxis,:,:,:]
     return image
 
-fsrcnn = model.FSRCNN()
-fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_16000.pt"))
+fsrcnn = model.FSRCNN().eval()
+fsrcnn.load_state_dict(torch.load(f"checkpoints/fsrcnn_ep10.pt"))
 image = torch.from_numpy(read_zero_mean_image("sakura_half.png")).type(torch.FloatTensor)
 
 if torch.cuda.is_available():
@@ -23,12 +23,10 @@ if torch.cuda.is_available():
     image = image.cuda()
 
 outp = fsrcnn(image)
-
+outp = torch.clamp(outp)*255.
 outp = outp.detach().cpu().numpy().squeeze()
-for i in range(3):
-    outp[i] = (outp[i]*c_std[i]+c_mean[i])*255
+# for i in range(3):
+#     outp[i] = (outp[i]*c_std[i]+c_mean[i])*255
 outp = outp.transpose(1,2,0)
-outp[outp<0] = 0
-outp[outp>255] = 255
 
 si.imsave("output.png", outp.astype(np.uint8))

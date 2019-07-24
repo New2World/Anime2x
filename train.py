@@ -35,18 +35,18 @@ class SuperResolutionDataset(Dataset):
         I = si.imread(f"data/img_{idx}.jpg")
         I = np.array(self.preprocess(I))
         image = np.array(self.resize(I))
-        I = torch.from_numpy(I.transpose(2,0,1)).type(torch.FloatTensor)
-        image = torch.from_numpy(image.transpose(2,0,1)).type(torch.FloatTensor)
-        for i in range(3):
-            I[i] = (I[i]/255.-c_mean[i])/c_std[i]
-            image[i] = (image[i]/255.-c_mean[i])/c_std[i]
+        I = torch.from_numpy(I.transpose(2,0,1)).type(torch.FloatTensor)/255.
+        image = torch.from_numpy(image.transpose(2,0,1)).type(torch.FloatTensor)/255.
+        # for i in range(3):
+        #     I[i] = (I[i]-c_mean[i])/c_std[i]
+        #     image[i] = (image[i]-c_mean[i])/c_std[i]
         if torch.cuda.is_available():
             image = image.cuda()
             I = I.cuda()
         return {"low":image, "high":I}
 
 def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summary=None):
-    criteria = nn.MSELoss()
+    criteria = nn.SmoothL1Loss()
     if torch.cuda.is_available():
         model.cuda()
         criteria.cuda()
@@ -60,6 +60,7 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
             inp = sample["low"]
             gt = sample["high"]
             outp = model(inp)
+            outp = torch.clamp(outp, 0, 1)
             mse_loss = criteria(gt, outp)
             optimizer.zero_grad()
             mse_loss.backward()
@@ -74,6 +75,7 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
                 avg_loss = 0.
             if step % 1000 == 0:
                 torch.save(model.state_dict(), f"checkpoints/fsrcnn_{step}.pt")
+        torch.save(model.state_dict(), f"checkpoints/fsrcnn_ep{ep+1}.pt")
         lr_scheduler.step()
 
 dataset = SuperResolutionDataset()

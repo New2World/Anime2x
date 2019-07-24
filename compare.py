@@ -4,7 +4,7 @@ import cv2
 origin = cv2.imread("sakura.png", 0)
 test = cv2.imread("sakura_half.png")
 output = cv2.imread("output.png", 0)
-target = cv2.imread("target.png", 0)
+target = cv2.imread("bigjpg.png", 0)
 
 x2_origin = cv2.resize(test, (636,1000), interpolation=cv2.INTER_CUBIC)
 x2_origin = cv2.cvtColor(x2_origin, cv2.COLOR_BGR2GRAY)
@@ -16,4 +16,4 @@ def PSNR(inp, tar):
 
 print(f"model output: {PSNR(origin, output)}")
 print(f"cubic output: {PSNR(origin, x2_origin)}")
-print(f"target output: {PSNR(target, origin)}")
+print(f"bigjpg output: {PSNR(target, origin)}")
