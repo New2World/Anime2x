@@ -15,8 +15,8 @@ def read_zero_mean_image(image_name):
     return image
 
 fsrcnn = model.FSRCNN()
-fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_final.pt"))
-image = torch.from_numpy(read_zero_mean_image("sakura.png")).type(torch.FloatTensor)
+fsrcnn.load_state_dict(torch.load("checkpoints/fsrcnn_16000.pt"))
+image = torch.from_numpy(read_zero_mean_image("sakura_half.png")).type(torch.FloatTensor)
 
 if torch.cuda.is_available():
     fsrcnn.cuda()
