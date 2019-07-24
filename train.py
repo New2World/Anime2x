@@ -19,13 +19,13 @@ class SuperResolutionDataset(Dataset):
         self.n_samples = len(list(os.walk("data"))[0][2])
         self.preprocess = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
-            tv.transforms.RandomCrop(256, padding=4, padding_mode='symmetric'),
+            tv.transforms.RandomCrop(482, padding=4, padding_mode='symmetric'),
             tv.transforms.RandomHorizontalFlip(),
             tv.transforms.RandomVerticalFlip()
         ])
         self.resize = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
-            tv.transforms.Resize(128)
+            tv.transforms.Resize(241)
         ])
     
     def __len__(self):
