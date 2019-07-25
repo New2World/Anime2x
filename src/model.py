@@ -3,76 +3,87 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+class resnet_block_basic(nn.Module):
+    def __init__(self, n_features):
+        super(resnet_block_basic, self).__init__()
+        self.conv1 = nn.Conv2d(n_features, n_features, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(num_features=n_features)
+        self.prelu1 = nn.LeakyReLU()
+        self.conv2 = nn.Conv2d(n_features,n_features, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(num_features=n_features)
+        self.prelu2 = nn.LeakyReLU()
+        nn.init.kaiming_normal_(self.conv1.weight)
+        nn.init.kaiming_normal_(self.conv2.weight)
+    
+    def forward(self, x):
+        outp = self.conv1(x)
+        outp = self.bn1(outp)
+        outp = self.prelu1(outp)
+        outp = self.conv2(outp)
+        outp = self.bn2(outp)
+        outp += x
+        outp = self.prelu2(outp)
+        return outp
+
 class feature_encoder(nn.Module):
     def __init__(self):
         super(feature_encoder, self).__init__()
-        self.conv_3x3_1_24 = nn.Conv2d(1, 24, kernel_size=3, padding=1)
-        self.conv_3x3_24_24 = nn.Conv2d(24, 24, kernel_size=3, padding=1)
-        self.conv_3x3_24_48 = nn.Conv2d(24, 48, kernel_size=3, padding=1)
-        self.conv_3x3_48_48 = nn.Conv2d(48, 48, kernel_size=3, padding=1)
-        self.prelu_1 = nn.PReLU()
-        self.prelu_2 = nn.PReLU()
-        self.prelu_3 = nn.PReLU()
-        self.prelu_4 = nn.PReLU()
-        nn.init.kaiming_normal_(self.conv_3x3_1_24.weight)
-        nn.init.kaiming_normal_(self.conv_3x3_24_24.weight)
-        nn.init.kaiming_normal_(self.conv_3x3_24_48.weight)
-        nn.init.kaiming_normal_(self.conv_3x3_48_48.weight)
+        self.resblock = self._make_block(56, in_features=1)
+    
+    def _make_block(self, features, layers=2, in_features=None):
+        layer = []
+        if in_features is None:
+            in_features = features
+        else:
+            layer.append(nn.Conv2d(in_features, features, kernel_size=1))
+            nn.init.kaiming_normal_(layer[0].weight)
+        for _ in range(layers):
+            layer.append(resnet_block_basic(features))
+        return nn.Sequential(*layer)
     
     def forward(self, x):
-        x = self.conv_3x3_1_24(x)
-        x = self.prelu_1(x)
-        x = self.conv_3x3_24_24(x)
-        x = self.prelu_2(x)
-        x = self.conv_3x3_24_48(x)
-        x = self.prelu_3(x)
-        x = self.conv_3x3_48_48(x)
-        x = self.prelu_4(x)
+        x = self.resblock(x)
         return x
 
 class feature_mapping(nn.Module):
     def __init__(self):
         super(feature_mapping, self).__init__()
-        self.conv_1x1_48_24 = nn.Conv2d(48, 24, kernel_size=1, padding=0)
-        self.conv_3x3_24_24 = nn.Conv2d(24, 24, kernel_size=3, padding=1)
-        self.conv_1x1_24_48 = nn.Conv2d(24, 48, kernel_size=1, padding=0)
-        self.prelu_1 = nn.PReLU()
-        self.prelu_2 = nn.PReLU()
-        self.prelu_3 = nn.PReLU()
-        nn.init.kaiming_normal_(self.conv_1x1_48_24.weight)
-        nn.init.kaiming_normal_(self.conv_3x3_24_24.weight)
-        nn.init.kaiming_normal_(self.conv_1x1_24_48.weight)
+        self.conv1 = nn.Conv2d(56, 12, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv2d(12, 12, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(12, 56, kernel_size=1, padding=0)
+        self.prelu1 = nn.PReLU()
+        self.prelu2 = nn.PReLU()
+        self.prelu3 = nn.PReLU()
+        nn.init.kaiming_normal_(self.conv1.weight)
+        nn.init.kaiming_normal_(self.conv2.weight)
+        nn.init.kaiming_normal_(self.conv3.weight)
     
     def forward(self, x):
-        x = self.conv_1x1_48_24(x)
-        x = self.prelu_1(x)
-        for _ in range(3):
-            x = self.conv_3x3_24_24(x)
-        x = self.prelu_2(x)
-        x = self.conv_1x1_24_48(x)
-        x = self.prelu_3(x)
+        x = self.conv1(x)
+        x = self.prelu1(x)
+        for _ in range(4):
+            x = self.conv2(x)
+        x = self.prelu2(x)
+        x = self.conv3(x)
+        x = self.prelu3(x)
         return x
 
 class x2_reconstructor(nn.Module):
     def __init__(self):
         super(x2_reconstructor, self).__init__()
-        self.deconv_9x9_48_1 = nn.ConvTranspose2d(48, 1, kernel_size=9, stride=2, padding=4, output_padding=1)
-        nn.init.normal_(self.deconv_9x9_48_1.weight, std=1e-3)
+        self.deconv1 = nn.ConvTranspose2d(56, 1, kernel_size=9, stride=2, padding=4, output_padding=1)
+        nn.init.normal_(self.deconv1.weight, std=1e-3)
     
     def forward(self, x):
-        x = self.deconv_9x9_48_1(x)
+        x = self.deconv1(x)
         return x
 
 class FSRCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, gpu=True):
         super(FSRCNN, self).__init__()
         self.encoder = feature_encoder()
         self.mapping = feature_mapping()
         self.decoder = x2_reconstructor()
-        if torch.cuda.is_available():
-            self.encoder.cuda()
-            self.mapping.cuda()
-            self.decoder.cuda()
     
     def forward(self, x):
         x = self.encoder(x)

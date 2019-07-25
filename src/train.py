@@ -18,13 +18,13 @@ class SuperResolutionDataset(Dataset):
         self.n_samples = len(list(os.walk("../data"))[0][2])
         self.preprocess = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
-            tv.transforms.RandomCrop(320),
+            tv.transforms.RandomCrop(300),
             tv.transforms.RandomHorizontalFlip(),
             tv.transforms.RandomVerticalFlip()
         ])
         self.resize = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
-            tv.transforms.Resize(160)
+            tv.transforms.Resize(150)
         ])
     
     def __len__(self):
@@ -32,9 +32,10 @@ class SuperResolutionDataset(Dataset):
     
     def __getitem__(self, idx):
         I = cv2.imread(f"../data/img_{idx}.jpg")
-        I = cv2.split(cv2.cvtColor(I, cv2.BGR2YUV))[0]
         I = np.array(self.preprocess(I))
         image = np.array(self.resize(I))
+        I = cv2.split(cv2.cvtColor(I, cv2.COLOR_BGR2YUV))[0][np.newaxis,:,:]
+        image = cv2.split(cv2.cvtColor(image, cv2.COLOR_BGR2YUV))[0][np.newaxis,:,:]
         I = torch.from_numpy(I).type(torch.FloatTensor)/255.
         image = torch.from_numpy(image).type(torch.FloatTensor)/255.
         if torch.cuda.is_available():
@@ -50,7 +51,7 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
     optimizer = optim.Adam([{'params': model.encoder.parameters(), 'lr':lr1},
                             {'params': model.mapping.parameters(), 'lr':lr1},
                             {'params': model.decoder.parameters(), 'lr':lr2}])
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5)
+    lr_scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=.8)
     for ep in range(epoch):
         avg_loss = 0.
         for sample in dataloader:
@@ -78,8 +79,6 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
 dataset = SuperResolutionDataset()
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 fsrcnn = model.FSRCNN()
-if torch.cuda.is_available():
-    fsrcnn.cuda()
 # summary = SummaryWriter(log_dir="logdir")
 training_loop(fsrcnn, dataloader, epoch=20)
 # summary.close()

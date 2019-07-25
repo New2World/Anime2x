@@ -1,4 +1,4 @@
-import cv2
+import sys, cv2
 import numpy as np
 import torch
 
@@ -7,17 +7,19 @@ import model
 c_mean = [0.513, 0.476, 0.471]
 c_std = [0.367, 0.355, 0.348]
 
+gpu = False
+
 def read_zero_mean_image(image_name):
     y, u, v = cv2.split(cv2.cvtColor(cv2.imread(image_name), cv2.COLOR_BGR2YUV))
     image = y[np.newaxis,np.newaxis,:,:] / 255.
     return image, u, v
 
 fsrcnn = model.FSRCNN().eval()
-fsrcnn.load_state_dict(torch.load(f"../checkpoints/fsrcnn_ep10.pt"))
+fsrcnn.load_state_dict(torch.load(f"../checkpoints/fsrcnn_{sys.argv[1]}.pt"))
 inp, u, v = read_zero_mean_image("../sakura_half.png")
 image = torch.from_numpy(inp).type(torch.FloatTensor)
 
-if torch.cuda.is_available():
+if gpu:
     fsrcnn.cuda()
     image = image.cuda()
 
