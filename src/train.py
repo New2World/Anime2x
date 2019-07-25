@@ -1,5 +1,4 @@
-import os
-import skimage.io as si
+import os, cv2
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,7 +15,7 @@ c_std = [0.367, 0.355, 0.348]
 
 class SuperResolutionDataset(Dataset):
     def __init__(self):
-        self.n_samples = len(list(os.walk("data"))[0][2])
+        self.n_samples = len(list(os.walk("../data"))[0][2])
         self.preprocess = tv.transforms.Compose([
             tv.transforms.ToPILImage(),
             tv.transforms.RandomCrop(320),
@@ -32,14 +31,12 @@ class SuperResolutionDataset(Dataset):
         return self.n_samples
     
     def __getitem__(self, idx):
-        I = si.imread(f"data/img_{idx}.jpg")
+        I = cv2.imread(f"../data/img_{idx}.jpg")
+        I = cv2.split(cv2.cvtColor(I, cv2.BGR2YUV))[0]
         I = np.array(self.preprocess(I))
         image = np.array(self.resize(I))
-        I = torch.from_numpy(I.transpose(2,0,1)).type(torch.FloatTensor)/255.
-        image = torch.from_numpy(image.transpose(2,0,1)).type(torch.FloatTensor)/255.
-        # for i in range(3):
-        #     I[i] = (I[i]-c_mean[i])/c_std[i]
-        #     image[i] = (image[i]-c_mean[i])/c_std[i]
+        I = torch.from_numpy(I).type(torch.FloatTensor)/255.
+        image = torch.from_numpy(image).type(torch.FloatTensor)/255.
         if torch.cuda.is_available():
             image = image.cuda()
             I = I.cuda()
@@ -74,8 +71,8 @@ def training_loop(model, dataloader, step=0, epoch=10, lr1=1e-3, lr2=1e-4, summa
                     summary.add_scalar("loss", avg_loss, global_step=step)
                 avg_loss = 0.
             if step % 1000 == 0:
-                torch.save(model.state_dict(), f"checkpoints/fsrcnn_{step}.pt")
-        torch.save(model.state_dict(), f"checkpoints/fsrcnn_ep{ep+1}.pt")
+                torch.save(model.state_dict(), f"../checkpoints/fsrcnn_{step}.pt")
+        torch.save(model.state_dict(), f"../checkpoints/fsrcnn_ep{ep+1}.pt")
         lr_scheduler.step()
 
 dataset = SuperResolutionDataset()
@@ -86,4 +83,4 @@ if torch.cuda.is_available():
 # summary = SummaryWriter(log_dir="logdir")
 training_loop(fsrcnn, dataloader, epoch=20)
 # summary.close()
-torch.save(fsrcnn.state_dict(), "checkpoints/fsrcnn_final.pt")
+torch.save(fsrcnn.state_dict(), "../checkpoints/fsrcnn_final.pt")
