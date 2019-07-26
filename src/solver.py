@@ -14,8 +14,9 @@ def read_zero_mean_image(image_name):
     image = y[np.newaxis,np.newaxis,:,:] / 255.
     return image, u, v
 
-fsrcnn = model.FSRCNN().eval()
+fsrcnn = model.FSRCNN()
 fsrcnn.load_state_dict(torch.load(f"../checkpoints/fsrcnn_{sys.argv[1]}.pt"))
+fsrcnn.eval()
 inp, u, v = read_zero_mean_image("../sakura_half.png")
 image = torch.from_numpy(inp).type(torch.FloatTensor)
 

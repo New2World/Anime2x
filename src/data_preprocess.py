@@ -2,7 +2,7 @@ import os
 import skimage.io as si
 import numpy as np
 
-image_list = [os.path.join('data', image) for image in list(os.walk('data'))[0][2]]
+image_list = [os.path.join('../data', image) for image in list(os.walk('../data'))[0][2]]
 l = len(image_list)
 image_mean = np.zeros((l,3))
 image_std = np.zeros((l,3))
