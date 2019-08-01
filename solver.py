@@ -90,3 +90,27 @@ if args.cmp:
     print(f'model  PSNR: {PSNR(cv2.cvtColor(x2_img, cv2.COLOR_BGR2GRAY), origin)}')
     print(f'bigjpg PSNR: {PSNR(bigjpg, origin)}')
     print(f'cubic  PSNR: {PSNR(cv2.cvtColor(cv2.resize(low_img, cv2.INTER_CUBIC), cv2.COLOR_BGR2GRAY), origin)}')
+
+
+
+
+
+# TODO
+
+max_width, max_height = 800, 800
+overlap = 8
+
+def divide_width(x):
+    pass
+
+def divide_height(x):
+    pass
+
+def divide_block(width, height):
+    if width * height <= max_width * max_height:
+        return [(0,0,width,height)]
+    corner = [0,0]
+    while divide_width(corner):
+        pass
+    while divide_height(corner):
+        pass
