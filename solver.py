@@ -26,19 +26,16 @@ def check_log(logdir):
     logpath = logdir / 'model.log'
     if logpath.exists():
         return
-    epoch, step = 0, 0
-    for ckpt in logdir.glob('srcnn_*_*.pt'):
-        _, ep, st = str(ckpt)[:-3].split('_')
-        ep, st = int(ep), int(st)
+    epoch = 0
+    for ckpt in logdir.glob('srcnn-*.pt'):
+        _, ep= str(ckpt)[:-3].split('-')
+        ep = int(ep)
         if ep > epoch:
             epoch = ep
-            step = st
-        elif ep == epoch and st > step:
-            step = st
     if epoch == 0:
         raise FileNotFoundError('No checkpoint found')
     with open(logpath, 'w') as f:
-        f.write(f'srcnn_{epoch}_{step}.pt')
+        f.write(f'srcnn-{epoch}.pt')
 
 def load_ckpt(model, logdir):
     logdir = pathlib.Path(logdir)
