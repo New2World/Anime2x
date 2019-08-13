@@ -53,4 +53,6 @@ if __name__ == '__main__':
     fsrcnn = FSRCNN(1, 1)
     load_ckpt('../checkpoints', 'fsrcnn', fsrcnn)
     image = solver.scale2x(fsrcnn, args.input)
+    if os.path.isdir(args.output):
+        os.path.join(args.output, 'output.png')
     cv2.imwrite(args.output, image)
