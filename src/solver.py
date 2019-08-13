@@ -51,6 +51,6 @@ if __name__ == '__main__':
     args = parse_args()
     solver = SuperImage()
     fsrcnn = FSRCNN(1, 1)
-    load_ckpt('checkpoints', 'fsrcnn', fsrcnn)
+    load_ckpt('../checkpoints', 'fsrcnn', fsrcnn)
     image = solver.scale2x(fsrcnn, args.input)
     cv2.imwrite(args.output, image)
