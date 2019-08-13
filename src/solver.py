@@ -5,7 +5,6 @@ import numpy as np
 from PIL import Image
 
 from fsrcnn import FSRCNN
-from tools import load_ckpt
 
 class SuperImage:
     def __run(self, model, image):
@@ -51,7 +50,7 @@ if __name__ == '__main__':
     args = parse_args()
     solver = SuperImage()
     fsrcnn = FSRCNN(1, 1)
-    load_ckpt('../checkpoints', 'fsrcnn', fsrcnn)
+    fsrcnn.load_state_dict(torch.load('../checkpoints/fsrcnn.pt')['model_state_dict'])
     image = solver.scale2x(fsrcnn, args.input)
     if os.path.isdir(args.output):
         os.path.join(args.output, 'output.png')
