@@ -4,7 +4,7 @@ This is a deep neural network model for scaling anime illustrations by **2x**
 
 ## Model
 
-The framework of this model is based on [**F**ast **S**uper **R**solution **CNN**](https://arxiv.org/abs/1608.00367). However, different from origin FSRCNN, the first part is replaced by multiple convolutional layers and the kernel size is reduced from 5 to 3.
+The framework of this model is based on [**F**ast **S**uper **R**esolution **CNN**](https://arxiv.org/abs/1608.00367). However, different from origin FSRCNN, the first part is replaced by multiple convolutional layers and the kernel size is reduced from 5 to 3.
 
 ## Train
 
