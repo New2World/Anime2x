@@ -4,8 +4,10 @@ import torch
 def find_ckpt(path, name):
     epo = 0
     ckpt_list = list(os.walk(path))[0][2]
+    if f'{name}.pt' in ckpt_list:
+        return f'{name}.pt'
     for ckpt_file in ckpt_list:
-        if ckpt_file.endswith('.pt'):
+        if ckpt_file.startswith(name) and ckpt_file.endswith('.pt'):
             ep = int(ckpt_file[:-3].split('-')[1])
             if ep > epo:
                 epo = ep
