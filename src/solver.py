@@ -5,12 +5,13 @@ import numpy as np
 from PIL import Image
 
 from fsrcnn import FSRCNN
+from tools import load_ckpt
 
 class SuperImage:
-    def __run(self, model, image):
+    def __run(self, model, image, gpu):
         model.eval()
         image = image / 255.
-        if torch.cuda.is_available():
+        if gpu and torch.cuda.is_available():
             model.cuda()
             image = image.cuda()
         outp = model(image)
@@ -27,13 +28,13 @@ class SuperImage:
             y, cr, cb = cv2.split(cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb))
         return y, cr, cb
     
-    def scale2x(self, model, image, median_blur=True):
+    def scale2x(self, model, image, gpu=True, median_blur=True):
         y, cr, cb = self.__load_image(image)
         h, w = y.shape
         cr = cv2.resize(cr, (2*w,2*h), cv2.INTER_LANCZOS4)
         cb = cv2.resize(cb, (2*w,2*h), cv2.INTER_LANCZOS4)
         y = torch.from_numpy(y[np.newaxis,np.newaxis,:,:]).type(torch.FloatTensor)
-        outp = self.__run(model, y)
+        outp = self.__run(model, y, gpu)
         image2x = np.stack((outp, cr, cb), axis=2)
         image2x = cv2.cvtColor(image2x, cv2.COLOR_YCrCb2BGR)
         if median_blur:
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     args = parse_args()
     solver = SuperImage()
     fsrcnn = FSRCNN(1, 1)
-    fsrcnn.load_state_dict(torch.load('../checkpoints/fsrcnn.pt')['model_state_dict'])
+    load_ckpt('../checkpoints/', 'fsrcnn', fsrcnn)
     image = solver.scale2x(fsrcnn, args.input)
     if os.path.isdir(args.output):
         os.path.join(args.output, 'output.png')

@@ -7,6 +7,7 @@ class FSRCNN(nn.Module):
         self.first_part = self.__first()
         self.mid_part = self.__mid()
         self.last_part = self.__last()
+        self.smooth_part = self.__smooth()
     
     def __first(self):
         first = nn.Sequential()
@@ -29,20 +30,27 @@ class FSRCNN(nn.Module):
         mid.add_module('mid_prelu1', nn.PReLU())
         for i in range(4):
             mid.add_module(f'mid_conv{i+2}', nn.Conv2d(16, 16, kernel_size=3, padding=1))
-        mid.add_module('mid_conv6', nn.Conv2d(16, 64, kernel_size=1))
         mid.add_module('mid_prelu2', nn.PReLU())
+        mid.add_module('mid_conv6', nn.Conv2d(16, 64, kernel_size=1))
+        mid.add_module('mid_prelu3', nn.PReLU())
         for m in mid.modules():
             if type(m) is nn.Conv2d:
                 nn.init.kaiming_normal_(m.weight)
         return mid
     
     def __last(self):
-        last = nn.ConvTranspose2d(64, 1, kernel_size=9, padding=4, stride=2, output_padding=1)
+        last = nn.ConvTranspose2d(64, 3, kernel_size=5, padding=2, stride=2, output_padding=1)
         nn.init.kaiming_normal_(last.weight)
         return last
+    
+    def __smooth(self):
+        smooth = nn.Conv2d(3, 1, kernel_size=5, padding=2)
+        nn.init.kaiming_normal_(smooth.weight)
+        return smooth
     
     def forward(self, x):
         x = self.first_part(x)
         x = self.mid_part(x)
         x = self.last_part(x)
+        x = self.smooth_part(x)
         return x
