@@ -28,7 +28,7 @@ class SuperImage:
             y, cr, cb = cv2.split(cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb))
         return y, cr, cb
     
-    def scale2x(self, model, image, gpu=True, median_blur=True):
+    def scale2x(self, model, image, median_blur=3, gpu=True):
         y, cr, cb = self.__load_image(image)
         h, w = y.shape
         cr = cv2.resize(cr, (2*w,2*h), cv2.INTER_LANCZOS4)
@@ -37,8 +37,8 @@ class SuperImage:
         outp = self.__run(model, y, gpu)
         image2x = np.stack((outp, cr, cb), axis=2)
         image2x = cv2.cvtColor(image2x, cv2.COLOR_YCrCb2BGR)
-        if median_blur:
-            image2x = cv2.medianBlur(image2x, 3)
+        if median_blur > 0:
+            image2x = cv2.medianBlur(image2x, median_blur)
         return image2x
 
 def parse_args():
